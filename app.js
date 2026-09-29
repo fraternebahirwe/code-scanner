@@ -59,6 +59,7 @@
     scanning = true;
     placeholder.hidden = true;
     reticle.hidden = false;
+    stage.classList.add("live"); // fade & scale the video in
     setToggle(true);
     setupTorchButton();
     setupSwitchButton();
@@ -77,6 +78,7 @@
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
     track = null;
     video.srcObject = null;
+    stage.classList.remove("live");
     reticle.hidden = true;
     placeholder.hidden = false;
     setToggle(false);
