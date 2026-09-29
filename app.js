@@ -160,8 +160,7 @@
   }
 
   function showResult(value, format) {
-    var isUrl = /^(https?:\/\/|www\.)/i.test(value.trim());
-    var href = isUrl ? (value.trim().indexOf("http") === 0 ? value.trim() : "https://" + value.trim()) : null;
+    var link = detectLink(value); // { href, label } or null
 
     resultEl.innerHTML = "";
     var top = document.createElement("div"); top.className = "top";
@@ -184,15 +183,39 @@
     });
     actions.appendChild(copy);
 
-    if (href) {
-      var open = document.createElement("a"); open.className = "chip"; open.href = href;
+    if (link) {
+      var open = document.createElement("a"); open.className = "chip"; open.href = link.href;
       open.target = "_blank"; open.rel = "noopener noreferrer";
-      open.innerHTML = iconLink() + "Open link";
+      open.innerHTML = iconLink() + link.label;
       actions.appendChild(open);
     }
 
     resultEl.appendChild(top); resultEl.appendChild(val); resultEl.appendChild(actions);
     resultEl.hidden = false;
+  }
+
+  // Work out whether a scanned value is something we can open, and how to
+  // label the button. Covers full URLs, bare domains (example.com/page),
+  // and the common mailto:/tel:/sms: QR schemes.
+  function detectLink(raw) {
+    var s = (raw || "").trim();
+    if (!s) return null;
+
+    if (/^mailto:/i.test(s)) return { href: s, label: "Send email" };
+    if (/^tel:/i.test(s)) return { href: s, label: "Call number" };
+    if (/^sms:/i.test(s)) return { href: s, label: "Send SMS" };
+
+    // A full URL with a scheme (http, https, ftp, etc.).
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(s) && !/\s/.test(s)) {
+      return { href: s, label: "Open link" };
+    }
+    // Starts with www., or looks like a bare domain: has no spaces, a dot,
+    // and a 2–24 letter top-level part (optionally followed by a path/query).
+    var bareDomain = /^(www\.)?[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,24}([\/:?#]\S*)?$/i;
+    if (!/\s/.test(s) && bareDomain.test(s)) {
+      return { href: "https://" + s.replace(/^\/+/, ""), label: "Open link" };
+    }
+    return null;
   }
 
   function flashHit() {
