@@ -33,6 +33,16 @@ On Chrome and Android the built-in `BarcodeDetector` is used. On Safari and
 Firefox a bundled copy of [ZXing](https://github.com/zxing-js/library)
 (`vendor/zxing.min.js`) is used instead, so no internet connection is needed.
 
+## Animations
+
+The interface is lightly animated for feedback and polish: the header,
+camera and controls ease in on load; the scan-frame corners draw in with a
+stagger and the guide line sweeps; a successful scan triggers a green ring
+burst, a corner pop, a beep and a vibration; the result badge pops and its
+buttons cascade in; history rows stagger in; switching cameras flips the
+stage; and an idle glow invites the first tap. All of it is disabled
+automatically when the system is set to **reduce motion**.
+
 ## Privacy
 
 - The camera only turns on while you are scanning, and turns off when you
