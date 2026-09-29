@@ -23,8 +23,11 @@
   var histList = $("histList");
   var clearBtn = $("clearBtn");
   var toastEl = $("toast");
+  var autoStartEl = $("autoStart");
 
   var STORAGE_KEY = "code-scanner-history";
+  var AUTOSTART_KEY = "code-scanner-autostart";
+  var DEDUPE_MS = 3000; // ignore the same code re-read within this window
   var scanning = false;
   var stream = null;
   var track = null;
@@ -38,6 +41,21 @@
   var history = loadHistory();
 
   renderHistory();
+  initAutoStart();
+
+  // ---- Auto-start setting ----------------------------------------------
+
+  function initAutoStart() {
+    var on = false;
+    try { on = localStorage.getItem(AUTOSTART_KEY) === "1"; } catch (e) {}
+    autoStartEl.checked = on;
+    autoStartEl.addEventListener("change", function () {
+      try { localStorage.setItem(AUTOSTART_KEY, autoStartEl.checked ? "1" : "0"); } catch (e) {}
+      if (autoStartEl.checked && !scanning) start();
+    });
+    // Kick off the camera on load when the user has opted in.
+    if (on) start();
+  }
 
   // ---- Camera lifecycle -------------------------------------------------
 
@@ -148,8 +166,8 @@
   function onDetected(value, format) {
     if (!value) return;
     var now = Date.now();
-    // Debounce: ignore the same value repeated within 2.5s.
-    if (value === lastValue && now - lastAt < 2500) return;
+    // Debounce: ignore the same value repeated within the dedupe window.
+    if (value === lastValue && now - lastAt < DEDUPE_MS) return;
     lastValue = value; lastAt = now;
 
     beep();
