@@ -56,6 +56,14 @@
     try { await video.play(); } catch (e) { /* autoplay quirks; ignore */ }
     track = stream.getVideoTracks()[0];
 
+    // Mirror the preview for front-facing cameras only. A phone's back camera
+    // reports facingMode "environment" and is left un-mirrored; the front
+    // camera reports "user", and built-in laptop webcams usually report
+    // nothing at all — both of those read best mirrored, like a mirror.
+    var settings = track.getSettings ? track.getSettings() : {};
+    var isFront = settings.facingMode !== "environment";
+    stage.classList.toggle("mirror", isFront);
+
     scanning = true;
     placeholder.hidden = true;
     reticle.hidden = false;
@@ -79,6 +87,7 @@
     track = null;
     video.srcObject = null;
     stage.classList.remove("live");
+    stage.classList.remove("mirror");
     reticle.hidden = true;
     placeholder.hidden = false;
     setToggle(false);

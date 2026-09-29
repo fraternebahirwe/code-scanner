@@ -79,6 +79,10 @@
       transition: opacity .5s ease-out, transform .6s cubic-bezier(.2, .8, .2, 1);
     }
     .stage.live video { opacity: 1; transform: scale(1); }
+    /* Mirror the front / built-in webcam so it feels like a mirror; the back
+       camera is left as-is so the world reads the right way round. */
+    .stage.mirror video { transform: scaleX(-1) scale(1.04); }
+    .stage.mirror.live video { transform: scaleX(-1) scale(1); }
 
     /* Scan reticle overlay */
     .reticle { position: absolute; inset: 0; pointer-events: none; }
