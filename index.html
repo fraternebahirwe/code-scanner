@@ -60,6 +60,14 @@
       border: 1px solid var(--line); box-shadow: 0 10px 30px rgb(0 0 0 / .25);
     }
     @media (min-width: 640px) { .stage { aspect-ratio: 4 / 3; } }
+    /* Flip the stage when the user switches cameras. */
+    .stage.flipping { animation: flip .5s ease; }
+    @keyframes flip {
+      0% { transform: perspective(900px) rotateY(0); }
+      50% { transform: perspective(900px) rotateY(90deg); }
+      50.01% { transform: perspective(900px) rotateY(-90deg); }
+      100% { transform: perspective(900px) rotateY(0); }
+    }
     video {
       width: 100%; height: 100%; object-fit: cover; display: block; background: #000;
       opacity: 0; transform: scale(1.04);

@@ -219,6 +219,8 @@
     switchBtn.onclick = async function () {
       facingMode = facingMode === "environment" ? "user" : "environment";
       var wasScanning = scanning;
+      stage.classList.add("flipping");
+      setTimeout(function () { stage.classList.remove("flipping"); }, 500);
       stop();
       if (wasScanning) await start();
     };
