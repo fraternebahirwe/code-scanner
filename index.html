@@ -193,6 +193,24 @@
       animation: badge-pop .4s cubic-bezier(.2, 1.5, .4, 1) both;
     }
     @keyframes badge-pop { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: scale(1); } }
+    .result .purpose { color: var(--muted); font-size: 13px; }
+    .result .fields { display: grid; gap: 6px; margin: 0 0 12px; }
+    .result .field { display: flex; align-items: center; gap: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; }
+    .result .f-key { color: var(--muted); font-size: 12.5px; min-width: 78px; flex: none; }
+    .result .f-val { flex: 1; min-width: 0; word-break: break-word; font-size: 14px; }
+    .result .f-val.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+    .result .f-copy { background: none; border: 0; color: var(--muted); padding: 5px; border-radius: 7px; display: grid; place-items: center; flex: none; transition: transform .18s, color .18s, background-color .18s; }
+    .result .f-copy svg { width: 14px; height: 14px; }
+    .result .f-copy:hover { color: var(--brand); background: var(--panel); transform: scale(1.12); }
+    .result .badge.url { background: color-mix(in srgb, var(--brand) 20%, transparent); }
+    .chip.primary-chip { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+    .chip.primary-chip:hover { background: var(--brand-2); border-color: var(--brand-2); color: var(--brand-ink); }
+    .result .autoopen {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px;
+      padding: 9px 12px; border-radius: 10px; font-size: 13.5px;
+      background: color-mix(in srgb, var(--brand) 12%, transparent); color: var(--text);
+      animation: rise .25s ease-out;
+    }
     .result .value {
       background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px;
       padding: 11px 13px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px;
@@ -312,6 +330,12 @@
         <input type="checkbox" id="autoStart" />
         <span class="switch" aria-hidden="true"></span>
         <span>Start camera automatically</span>
+      </label>
+
+      <label class="setting" title="After scanning a website link, open it automatically (with a 3-second cancel)">
+        <input type="checkbox" id="autoOpen" />
+        <span class="switch" aria-hidden="true"></span>
+        <span>Open website links automatically</span>
       </label>
     </div>
 

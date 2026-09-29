@@ -24,6 +24,24 @@ on.
 - **Flashlight** turns on the torch (on phones that support it).
 - Recent scans are kept in **Scan history**, stored only in this browser.
 
+## What a scan shows
+
+The app doesn't just print the raw text — it works out **what the code is for**
+and pulls out the useful parts:
+
+- **Website** — the address and domain, with an **Open link** button.
+- **Wi-Fi** — the network name, security type and password (each copyable).
+- **Contact** — name, phone, email and company, with a **Call** button.
+- **Phone / Email / SMS** — with **Call**, **Send email** or **Send SMS**.
+- **Location** — coordinates, with **Open in Maps**.
+- **Product barcode** — the number, with a **Look up online** button.
+- **Text** — anything else, shown as-is.
+
+Turn on **Open website links automatically** to have a scanned link open on
+its own after a short, cancellable countdown. It is **off by default** on
+purpose: a QR sticker placed over a real one can point at a fake site, so
+opening links should be a deliberate choice.
+
 ## Supported codes
 
 QR, Data Matrix, Aztec, PDF417, and 1D barcodes such as EAN-13/8, UPC-A/E,

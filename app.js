@@ -24,9 +24,11 @@
   var clearBtn = $("clearBtn");
   var toastEl = $("toast");
   var autoStartEl = $("autoStart");
+  var autoOpenEl = $("autoOpen");
 
   var STORAGE_KEY = "code-scanner-history";
   var AUTOSTART_KEY = "code-scanner-autostart";
+  var AUTOOPEN_KEY = "code-scanner-autoopen";
   var DEDUPE_MS = 3000; // ignore the same code re-read within this window
   var scanning = false;
   var stream = null;
@@ -55,6 +57,14 @@
     });
     // Kick off the camera on load when the user has opted in.
     if (on) start();
+
+    var openOn = false;
+    try { openOn = localStorage.getItem(AUTOOPEN_KEY) === "1"; } catch (e) {}
+    autoOpenEl.checked = openOn;
+    autoOpenEl.addEventListener("change", function () {
+      try { localStorage.setItem(AUTOOPEN_KEY, autoOpenEl.checked ? "1" : "0"); } catch (e) {}
+      if (!autoOpenEl.checked) cancelAutoOpen();
+    });
   }
 
   // ---- Camera lifecycle -------------------------------------------------
@@ -187,20 +197,53 @@
   }
 
   function showResult(value, format) {
-    var link = detectLink(value); // { href, label } or null
+    cancelAutoOpen();
+    var info = parseContent(value, format); // { type, purpose, fields, link, isUrl }
 
     resultEl.innerHTML = "";
+
+    // Header: what kind of code this is, and its purpose in plain words.
     var top = document.createElement("div"); top.className = "top";
-    var badge = document.createElement("span"); badge.className = "badge";
-    badge.textContent = codeType(value, format);
-    var label = document.createElement("span"); label.style.color = "var(--muted)"; label.style.fontSize = "13px";
-    label.textContent = "Scanned";
-    top.appendChild(badge); top.appendChild(label);
+    var badge = document.createElement("span"); badge.className = "badge" + (info.type === "URL" ? " url" : "");
+    badge.textContent = info.type;
+    var purpose = document.createElement("span"); purpose.className = "purpose";
+    purpose.textContent = info.purpose;
+    top.appendChild(badge); top.appendChild(purpose);
+    resultEl.appendChild(top);
 
+    // Extracted fields (Wi-Fi name/password, contact phone, coordinates, ...).
+    if (info.fields && info.fields.length) {
+      var dl = document.createElement("div"); dl.className = "fields";
+      info.fields.forEach(function (fld) {
+        var row = document.createElement("div"); row.className = "field";
+        var k = document.createElement("span"); k.className = "f-key"; k.textContent = fld.label;
+        var v = document.createElement("span"); v.className = "f-val" + (fld.mono ? " mono" : ""); v.textContent = fld.value;
+        row.appendChild(k); row.appendChild(v);
+        if (fld.copyable) {
+          var fc = document.createElement("button"); fc.className = "f-copy"; fc.type = "button";
+          fc.title = "Copy " + fld.label; fc.setAttribute("aria-label", "Copy " + fld.label);
+          fc.innerHTML = iconCopy();
+          fc.addEventListener("click", function () { copyText(fld.value); toast("Copied " + fld.label.toLowerCase()); });
+          row.appendChild(fc);
+        }
+        dl.appendChild(row);
+      });
+      resultEl.appendChild(dl);
+    }
+
+    // The raw decoded value, always available.
     var val = document.createElement("p"); val.className = "value"; val.textContent = value;
+    resultEl.appendChild(val);
 
+    // Actions: the main thing you'd do with this code, plus Copy.
     var actions = document.createElement("div"); actions.className = "actions";
-    var copy = document.createElement("button"); copy.className = "chip";
+    if (info.link) {
+      var open = document.createElement("a"); open.className = "chip primary-chip"; open.href = info.link.href;
+      open.target = "_blank"; open.rel = "noopener noreferrer";
+      open.innerHTML = iconLink() + info.link.label;
+      actions.appendChild(open);
+    }
+    var copy = document.createElement("button"); copy.className = "chip"; copy.type = "button";
     copy.innerHTML = iconCopy() + "Copy";
     copy.addEventListener("click", function () {
       copyText(value);
@@ -209,16 +252,127 @@
       setTimeout(function () { copy.innerHTML = iconCopy() + "Copy"; copy.classList.remove("ok"); }, 1600);
     });
     actions.appendChild(copy);
+    resultEl.appendChild(actions);
 
-    if (link) {
-      var open = document.createElement("a"); open.className = "chip"; open.href = link.href;
-      open.target = "_blank"; open.rel = "noopener noreferrer";
-      open.innerHTML = iconLink() + link.label;
-      actions.appendChild(open);
+    resultEl.hidden = false;
+
+    // Optionally open website links on their own, after a cancellable countdown.
+    if (info.isUrl && autoOpenEnabled()) scheduleAutoOpen(info.link.href);
+  }
+
+  // Interpret a scanned value into a human-readable purpose plus useful fields.
+  function parseContent(value, format) {
+    var s = (value || "").trim();
+    var up = s.toUpperCase();
+    var f = function (label, v, mono) { return { label: label, value: v, mono: !!mono, copyable: !!mono }; };
+
+    if (/^WIFI:/i.test(s)) {
+      var w = parseWifi(s);
+      return { type: "Wi-Fi", purpose: "Wi-Fi network — connect using these details",
+        fields: [f("Network", w.S || "—"), f("Security", w.T || "Open"), f("Password", w.P || "(none)", true)] };
+    }
+    if (/^BEGIN:VCARD/.test(up) || /^MECARD:/i.test(s)) {
+      var c = /^MECARD:/i.test(s) ? parseMecard(s) : parseVCard(s);
+      var cf = [];
+      if (c.name) cf.push(f("Name", c.name));
+      if (c.phone) cf.push(f("Phone", c.phone, true));
+      if (c.email) cf.push(f("Email", c.email, true));
+      if (c.org) cf.push(f("Company", c.org));
+      var clink = c.phone ? { href: "tel:" + c.phone.replace(/\s+/g, ""), label: "Call" } : null;
+      return { type: "Contact", purpose: "Contact card", fields: cf, link: clink };
+    }
+    if (/^mailto:/i.test(s)) {
+      return { type: "Email", purpose: "Email address", fields: [f("To", decodeURIComponent(s.slice(7).split("?")[0]))],
+        link: { href: s, label: "Send email" } };
+    }
+    if (/^tel:/i.test(s)) {
+      return { type: "Phone", purpose: "Phone number", fields: [f("Number", s.slice(4), true)],
+        link: { href: s, label: "Call number" } };
+    }
+    if (/^smsto:/i.test(s) || /^sms:/i.test(s)) {
+      var num = s.replace(/^smsto:/i, "").replace(/^sms:/i, "").split(/[:?]/)[0];
+      return { type: "SMS", purpose: "Text message", fields: [f("Number", num, true)],
+        link: { href: "sms:" + num, label: "Send SMS" } };
+    }
+    if (/^geo:/i.test(s)) {
+      var g = s.slice(4).split(/[;,]/);
+      return { type: "Location", purpose: "Map location",
+        fields: [f("Latitude", g[0] || "—"), f("Longitude", g[1] || "—")],
+        link: { href: "https://www.google.com/maps?q=" + encodeURIComponent((g[0] || "") + "," + (g[1] || "")), label: "Open in Maps" } };
+    }
+    if (/^BEGIN:VEVENT/.test(up)) {
+      var sum = (s.match(/SUMMARY:(.*)/i) || [])[1];
+      var when = (s.match(/DTSTART[^:]*:(.*)/i) || [])[1];
+      var ef = [];
+      if (sum) ef.push(f("Event", sum.trim()));
+      if (when) ef.push(f("Starts", when.trim(), true));
+      return { type: "Event", purpose: "Calendar event", fields: ef };
     }
 
-    resultEl.appendChild(top); resultEl.appendChild(val); resultEl.appendChild(actions);
-    resultEl.hidden = false;
+    var link = detectLink(s);
+    if (link && link.label === "Open link") {
+      var host = ""; try { host = new URL(link.href).hostname.replace(/^www\./, ""); } catch (e) {}
+      return { type: "URL", purpose: "Website link" + (host ? " — " + host : ""),
+        fields: host ? [f("Site", host)] : [], link: link, isUrl: true };
+    }
+    if (link) { // mailto/tel already handled above; any other scheme
+      return { type: "URL", purpose: "Link", link: link, isUrl: true };
+    }
+
+    var lf = (format || "").toLowerCase();
+    if (/^\d{8,14}$/.test(s) && lf && lf.indexOf("qr") === -1 && lf !== "code" && lf !== "data_matrix" && lf !== "aztec") {
+      return { type: "Barcode", purpose: "Product barcode", fields: [f("Code", s, true)],
+        link: { href: "https://www.google.com/search?q=" + encodeURIComponent(s), label: "Look up online" } };
+    }
+    return { type: codeType(value, format), purpose: "Plain text", fields: [] };
+  }
+
+  function parseWifi(s) {
+    var out = {};
+    s.replace(/^WIFI:/i, "").split(";").forEach(function (kv) {
+      var i = kv.indexOf(":");
+      if (i > 0) out[kv.slice(0, i).toUpperCase()] = kv.slice(i + 1);
+    });
+    return out;
+  }
+  function parseVCard(s) {
+    var m = function (re) { var x = s.match(re); return x ? x[1].trim() : ""; };
+    return { name: m(/(?:^|\n)FN:(.*)/i), phone: m(/(?:^|\n)TEL[^:]*:(.*)/i),
+      email: m(/(?:^|\n)EMAIL[^:]*:(.*)/i), org: m(/(?:^|\n)ORG:(.*)/i) };
+  }
+  function parseMecard(s) {
+    var body = s.replace(/^MECARD:/i, ""); var out = {};
+    body.split(";").forEach(function (kv) { var i = kv.indexOf(":"); if (i > 0) out[kv.slice(0, i).toUpperCase()] = kv.slice(i + 1); });
+    return { name: (out.N || "").replace(/,/g, " ").trim(), phone: out.TEL || "", email: out.EMAIL || "", org: out.ORG || "" };
+  }
+
+  // ---- Auto-open (opt-in) ----------------------------------------------
+
+  var autoOpenTimer = null;
+  function autoOpenEnabled() {
+    try { return localStorage.getItem(AUTOOPEN_KEY) === "1"; } catch (e) { return false; }
+  }
+  function scheduleAutoOpen(href) {
+    cancelAutoOpen();
+    var n = 3;
+    var bar = document.createElement("div"); bar.className = "autoopen";
+    var text = document.createElement("span");
+    var cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "link-btn";
+    cancel.textContent = "Cancel"; cancel.addEventListener("click", cancelAutoOpen);
+    bar.appendChild(text); bar.appendChild(cancel);
+    resultEl.appendChild(bar);
+    var render = function () { text.textContent = "Opening in " + n + "…"; };
+    render();
+    autoOpenTimer = setInterval(function () {
+      n--;
+      if (n <= 0) { cancelAutoOpen(); window.location.assign(href); }
+      else render();
+    }, 1000);
+  }
+  function cancelAutoOpen() {
+    if (autoOpenTimer) { clearInterval(autoOpenTimer); autoOpenTimer = null; }
+    var bar = resultEl.querySelector(".autoopen");
+    if (bar) bar.remove();
   }
 
   // Work out whether a scanned value is something we can open, and how to
@@ -443,4 +597,10 @@
   document.addEventListener("visibilitychange", function () {
     if (document.hidden && scanning) stop();
   });
+
+  // Optional debug hook (only with ?debug=1 in the URL) for interpreting a
+  // value or previewing a result card without a live camera.
+  if (/[?&]debug=1/.test(location.search)) {
+    window.CodeScanner = { parseContent: parseContent, showResult: showResult, detectLink: detectLink };
+  }
 })();
