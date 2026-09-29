@@ -174,7 +174,16 @@
     if (navigator.vibrate) { try { navigator.vibrate(60); } catch (e) {} }
     flashHit();
     showResult(value, format || "code");
-    addToHistory(value);
+    addToHistory(value, format || "code");
+  }
+
+  // A friendly type label for badges: "URL", "QR Code" or "Barcode".
+  function codeType(value, format) {
+    if (detectLink(value)) return "URL";
+    var f = (format || "").toString().toLowerCase();
+    if (f.indexOf("qr") !== -1) return "QR Code";
+    if (f === "data_matrix" || f === "aztec" || f === "pdf417") return f.replace("_", " ").toUpperCase();
+    return "Barcode";
   }
 
   function showResult(value, format) {
@@ -183,7 +192,7 @@
     resultEl.innerHTML = "";
     var top = document.createElement("div"); top.className = "top";
     var badge = document.createElement("span"); badge.className = "badge";
-    badge.textContent = (format || "code").toString();
+    badge.textContent = codeType(value, format);
     var label = document.createElement("span"); label.style.color = "var(--muted)"; label.style.fontSize = "13px";
     label.textContent = "Scanned";
     top.appendChild(badge); top.appendChild(label);
@@ -278,8 +287,8 @@
 
   // ---- History ----------------------------------------------------------
 
-  function addToHistory(value) {
-    history.unshift({ value: value, at: Date.now() });
+  function addToHistory(value, format) {
+    history.unshift({ value: value, at: Date.now(), format: format || "code" });
     if (history.length > 50) history = history.slice(0, 50);
     saveHistory();
     renderHistory();
@@ -296,13 +305,32 @@
       return;
     }
     history.forEach(function (item) {
+      var link = detectLink(item.value);
+      var type = codeType(item.value, item.format);
+
       var row = document.createElement("div"); row.className = "hist-item";
-      var dot = document.createElement("span"); dot.className = "dot";
+
+      var badge = document.createElement("span");
+      badge.className = "h-badge" + (type === "URL" ? " url" : "");
+      badge.textContent = type;
+
       var val = document.createElement("span"); val.className = "h-val"; val.textContent = item.value; val.title = item.value;
       var time = document.createElement("span"); time.className = "h-time"; time.textContent = timeAgo(item.at);
-      var copy = document.createElement("button"); copy.className = "h-copy"; copy.title = "Copy"; copy.innerHTML = iconCopy();
+
+      var actions = document.createElement("div"); actions.className = "h-actions";
+      if (link) {
+        var open = document.createElement("a"); open.className = "h-icon"; open.href = link.href;
+        open.target = "_blank"; open.rel = "noopener noreferrer";
+        open.title = link.label; open.setAttribute("aria-label", link.label + ": " + item.value);
+        open.innerHTML = iconLink();
+        actions.appendChild(open);
+      }
+      var copy = document.createElement("button"); copy.className = "h-icon"; copy.type = "button";
+      copy.title = "Copy"; copy.setAttribute("aria-label", "Copy: " + item.value); copy.innerHTML = iconCopy();
       copy.addEventListener("click", function () { copyText(item.value); toast("Copied"); });
-      row.appendChild(dot); row.appendChild(val); row.appendChild(time); row.appendChild(copy);
+      actions.appendChild(copy);
+
+      row.appendChild(badge); row.appendChild(val); row.appendChild(time); row.appendChild(actions);
       histList.appendChild(row);
     });
   }
