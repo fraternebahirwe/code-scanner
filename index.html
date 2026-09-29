@@ -77,11 +77,15 @@
       position: absolute; left: 50%; top: 50%; width: min(62%, 260px); aspect-ratio: 1;
       transform: translate(-50%, -50%);
     }
-    .corner { position: absolute; width: 30px; height: 30px; border: 3px solid var(--brand); border-radius: 4px; }
-    .corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
-    .corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
-    .corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
-    .corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+    .corner {
+      position: absolute; width: 30px; height: 30px; border: 3px solid var(--brand); border-radius: 4px;
+      opacity: 0; animation: corner-in .4s ease-out forwards;
+    }
+    .corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; transform: translate(6px, 6px); animation-delay: .05s; }
+    .corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; transform: translate(-6px, 6px); animation-delay: .12s; }
+    .corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; transform: translate(6px, -6px); animation-delay: .19s; }
+    .corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; transform: translate(-6px, -6px); animation-delay: .26s; }
+    @keyframes corner-in { to { opacity: 1; transform: translate(0, 0); } }
     /* Sweeping scan line */
     .scanline {
       position: absolute; left: 6%; right: 6%; height: 2px; top: 6%;
