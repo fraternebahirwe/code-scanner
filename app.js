@@ -109,7 +109,7 @@
     reticle.hidden = true;
     placeholder.hidden = false;
     setToggle(false);
-    torchBtn.disabled = true; torchBtn.classList.remove("on");
+    torchBtn.disabled = true; setTorchState(false);
     switchBtn.disabled = true;
   }
 
@@ -262,12 +262,21 @@
       torchBtn.onclick = function () {
         var on = !torchBtn.classList.contains("on");
         track.applyConstraints({ advanced: [{ torch: on }] })
-          .then(function () { torchBtn.classList.toggle("on", on); })
+          .then(function () { setTorchState(on); })
           .catch(function () { toast("Flashlight not available"); });
       };
     } else {
       torchBtn.disabled = true;
+      setTorchState(false);
     }
+  }
+
+  function setTorchState(on) {
+    torchBtn.classList.toggle("on", on);
+    torchBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    var label = on ? "Turn flashlight off" : "Turn flashlight on";
+    torchBtn.title = label;
+    torchBtn.setAttribute("aria-label", label);
   }
 
   async function setupSwitchButton() {
@@ -275,6 +284,9 @@
     try { devices = await navigator.mediaDevices.enumerateDevices(); } catch (e) {}
     var cams = devices.filter(function (d) { return d.kind === "videoinput"; });
     switchBtn.disabled = cams.length < 2;
+    var nextLabel = facingMode === "environment" ? "Switch to front camera" : "Switch to back camera";
+    switchBtn.title = nextLabel;
+    switchBtn.setAttribute("aria-label", nextLabel);
     switchBtn.onclick = async function () {
       facingMode = facingMode === "environment" ? "user" : "environment";
       var wasScanning = scanning;
@@ -351,10 +363,12 @@
   function setToggle(on) {
     if (on) {
       toggleBtn.classList.add("stop");
-      toggleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg> Stop scanning';
+      toggleBtn.setAttribute("aria-label", "Stop scanning");
+      toggleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg> Stop scanning';
     } else {
       toggleBtn.classList.remove("stop");
-      toggleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start scanning';
+      toggleBtn.setAttribute("aria-label", "Start scanning");
+      toggleBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start scanning';
     }
   }
 

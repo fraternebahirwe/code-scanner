@@ -276,11 +276,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
     </span>
     <h1>Code Scanner</h1>
-    <button class="icon-btn" id="switchBtn" title="Switch camera" disabled aria-label="Switch camera">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><path d="m16 16-3 3 3 3"/><path d="m8 8 3-3-3-3"/></svg>
+    <button class="icon-btn" id="switchBtn" type="button" title="Switch camera" disabled aria-label="Switch camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><path d="m16 16-3 3 3 3"/><path d="m8 8 3-3-3-3"/></svg>
     </button>
-    <button class="icon-btn" id="torchBtn" title="Toggle flashlight" disabled aria-label="Toggle flashlight">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l-1 7h3l-7 13v-9H8z"/></svg>
+    <button class="icon-btn" id="torchBtn" type="button" title="Turn flashlight on" disabled aria-label="Turn flashlight on" aria-pressed="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2h6l-1 7h3l-7 13v-9H8z"/></svg>
     </button>
   </header>
 
@@ -315,9 +315,9 @@
       </label>
     </div>
 
-    <div class="notice" id="notice" hidden></div>
+    <div class="notice" id="notice" role="alert" hidden></div>
 
-    <div class="result" id="result" hidden></div>
+    <div class="result" id="result" role="status" aria-live="polite" hidden></div>
 
     <section class="history">
       <div class="hist-head">
@@ -329,7 +329,7 @@
   </main>
 
   <footer>Everything runs locally in your browser. Nothing is uploaded.</footer>
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="vendor/zxing.min.js"></script>
   <script src="app.js"></script>
