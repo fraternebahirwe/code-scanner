@@ -108,7 +108,11 @@
       position: absolute; inset: 0; display: flex; flex-direction: column; gap: 14px;
       align-items: center; justify-content: center; text-align: center; padding: 24px; color: var(--muted);
     }
-    .placeholder svg { width: 46px; height: 46px; opacity: .7; }
+    .placeholder svg { width: 46px; height: 46px; opacity: .7; animation: breathe 3s ease-in-out infinite; }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: .55; }
+      50% { transform: scale(1.08); opacity: .85; }
+    }
 
     /* Primary control */
     .primary {
@@ -118,6 +122,12 @@
     }
     .primary:hover:not(:disabled) { transform: translateY(-1px); background: var(--brand-2); box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 35%, transparent); }
     .primary:active:not(:disabled) { transform: translateY(0) scale(.98); }
+    /* A gentle glow pulse invites the first tap; it stops once scanning. */
+    .primary:not(.stop) { animation: invite 2.6s ease-in-out infinite; }
+    @keyframes invite {
+      0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 45%, transparent); }
+      50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--brand) 0%, transparent); }
+    }
     .primary.stop { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
     .primary.stop:hover { background: var(--panel); }
 
