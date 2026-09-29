@@ -1,0 +1,9 @@
+{
+  "name": "code-scanner",
+  "version": "1.0.0",
+  "description": "A QR and barcode scanner that runs entirely on your own device camera.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "license": "MIT",
+  "private": true
+}
