@@ -401,10 +401,13 @@
 
   function flashHit() {
     stage.classList.remove("hit");
-    // Force reflow so the animation restarts on rapid scans.
+    document.body.classList.remove("scan-hit");
+    // Force reflow so the animations restart on rapid scans.
     void stage.offsetWidth;
     stage.classList.add("hit");
+    document.body.classList.add("scan-hit");
     setTimeout(function () { stage.classList.remove("hit"); }, 400);
+    setTimeout(function () { document.body.classList.remove("scan-hit"); }, 900);
   }
 
   // ---- Torch & camera switching ----------------------------------------
